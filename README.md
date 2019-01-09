@@ -1,3 +1,8 @@
+# Troubleshooting
+Don't change the overlay name from the default
+Disable meltdown spectre patches
+Use only Ubuntu 16.04 as the host
+
 # kAFL: Hardware-Assisted Feedback Fuzzing for OS Kernels
 
 Blazing fast x86-64 VM kernel fuzzing framework with performant VM reloads for Linux, MacOS and Windows.
