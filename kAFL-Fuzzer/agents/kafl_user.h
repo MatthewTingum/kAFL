@@ -29,6 +29,7 @@
 #define HYPERCALL_KAFL_LOCK				10
 #define HYPERCALL_KAFL_INFO				11
 #define HYPERCALL_KAFL_NEXT_PAYLOAD		12
+#define HYPERCALL_KAFL_SUBMIT_ADDR		16
 
 #define PAYLOAD_SIZE					(128 << 10)				/* up to 128KB payloads */
 #define PROGRAM_SIZE					(16  << 20)				/* kAFL supports 16MB programm data */
@@ -43,6 +44,16 @@ typedef struct{
 
 static inline void kAFL_hypercall(uint64_t rbx, uint64_t rcx){
 	uint64_t rax = HYPERCALL_KAFL_RAX_ID;
+	asm ("movq %0, %%rcx;" : : "r"(rcx));
+	asm ("movq %0, %%rbx;" : : "r"(rbx));
+    asm ("movq %0, %%rax;" : : "r"(rax));
+    asm ("vmcall");
+}
+
+static inline void kAFL_hypercall3(uint64_t rbx, uint64_t rcx, uint64_t rdx, uint64_t r8){
+	uint64_t rax = HYPERCALL_KAFL_RAX_ID;
+	asm ("movq %0, %%r8;" : : "r"(r8));
+	asm ("movq %0, %%rdx;" : : "r"(rdx));
 	asm ("movq %0, %%rcx;" : : "r"(rcx));
 	asm ("movq %0, %%rbx;" : : "r"(rbx));
     asm ("movq %0, %%rax;" : : "r"(rax));

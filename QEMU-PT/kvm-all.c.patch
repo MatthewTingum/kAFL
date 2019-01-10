@@ -1,108 +1,134 @@
-# Copyright (C) 2017 Sergej Schumilo
-# 
-# This file is part of QEMU-PT (kAFL).
-# 
-# QEMU-PT is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-# 
-# QEMU-PT is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
-42a64,69
-> #ifdef CONFIG_PROCESSOR_TRACE
-> #include "pt.h"
-> #include "pt/hypercall.h"
-> #endif
-> 
-> 
-321a349,353
-> #ifdef CONFIG_PROCESSOR_TRACE
->     pt_kvm_init(cpu);
-> #endif
-> 
-> 
-1970a2003,2014
-> #ifdef CONFIG_PROCESSOR_TRACE
->         if(cpu->reload_pending){
->             cpu->reload_pending = false;
->             //cpu_synchronize_state(cpu);
->             kvm_cpu_synchronize_state(cpu);
->             qemu_system_reload_request();
->             qemu_mutex_lock_iothread();
->             return 0;
->         }
-> #endif 
-> 
-> 
-1986a2031,2037
-> #ifdef CONFIG_PROCESSOR_TRACE
->         //if(pt_hypercalls_enabled()){
->             pt_pre_kvm_run(cpu);
->         //}
-> #endif
-> 
-> 
-2065a2117,2167
-> #ifdef CONFIG_PROCESSOR_TRACE
->         case KVM_EXIT_KAFL_ACQUIRE:
->             handle_hypercall_kafl_acquire(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_GET_PAYLOAD:
->             handle_hypercall_get_payload(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_GET_PROGRAM:
->             handle_hypercall_get_program(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_RELEASE:
->             handle_hypercall_kafl_release(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_SUBMIT_CR3:
->             handle_hypercall_kafl_cr3(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_SUBMIT_PANIC:
->             handle_hypercall_kafl_submit_panic(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_SUBMIT_KASAN:
->             handle_hypercall_kafl_submit_kasan(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_PANIC:
->             handle_hypercall_kafl_panic(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_KASAN:
->             handle_hypercall_kafl_kasan(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_LOCK:
->             handle_hypercall_kafl_lock(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_INFO:
->             handle_hypercall_kafl_info(run, cpu);
->             ret = 0;
->             break;
->         case KVM_EXIT_KAFL_NEXT_PAYLOAD:                                                                                                                                     
->             handle_hypercall_kafl_next_payload(run, cpu);                                                                                                                    
->             ret = 0;                                                                                                                                                         
->             break;                                                                                                                                                                                                                                                                                                              
-> #endif     
-> 
-2093a2196,2200
-> #ifdef CONFIG_PROCESSOR_TRACE                                                                                                                                                
->         //if(pt_hypercalls_enabled()){                                                                                                                                         
->             pt_post_kvm_run(cpu);                                                                                                                                            
->         //}                                                                                                                                                                    
-> #endif    
+--- kvm-all.c	2017-04-20 09:57:00.000000000 -0500
++++ kvm-all.c.patched	2019-01-10 13:02:38.936726395 -0600
+@@ -40,6 +40,12 @@
+ 
+ #include "hw/boards.h"
+ 
++#ifdef CONFIG_PROCESSOR_TRACE
++#include "pt.h"
++#include "pt/hypercall.h"
++#endif
++
++
+ /* This check must be after config-host.h is included */
+ #ifdef CONFIG_EVENTFD
+ #include <sys/eventfd.h>
+@@ -319,6 +325,11 @@
+     cpu->kvm_state = s;
+     cpu->kvm_vcpu_dirty = true;
+ 
++#ifdef CONFIG_PROCESSOR_TRACE
++    pt_kvm_init(cpu);
++#endif
++
++
+     mmap_size = kvm_ioctl(s, KVM_GET_VCPU_MMAP_SIZE, 0);
+     if (mmap_size < 0) {
+         ret = mmap_size;
+@@ -1968,6 +1979,18 @@
+     do {
+         MemTxAttrs attrs;
+ 
++#ifdef CONFIG_PROCESSOR_TRACE
++        if(cpu->reload_pending){
++            cpu->reload_pending = false;
++            //cpu_synchronize_state(cpu);
++            kvm_cpu_synchronize_state(cpu);
++            qemu_system_reload_request();
++            qemu_mutex_lock_iothread();
++            return 0;
++        }
++#endif 
++
++
+         if (cpu->kvm_vcpu_dirty) {
+             kvm_arch_put_registers(cpu, KVM_PUT_RUNTIME_STATE);
+             cpu->kvm_vcpu_dirty = false;
+@@ -1984,6 +2007,13 @@
+             kvm_cpu_kick_self();
+         }
+ 
++#ifdef CONFIG_PROCESSOR_TRACE
++        //if(pt_hypercalls_enabled()){
++            pt_pre_kvm_run(cpu);
++        //}
++#endif
++
++
+         /* Read cpu->exit_request before KVM_RUN reads run->immediate_exit.
+          * Matching barrier in kvm_eat_signals.
+          */
+@@ -2063,6 +2093,61 @@
+         case KVM_EXIT_INTERNAL_ERROR:
+             ret = kvm_handle_internal_error(cpu, run);
+             break;
++#ifdef CONFIG_PROCESSOR_TRACE
++        case KVM_EXIT_KAFL_ACQUIRE:
++            handle_hypercall_kafl_acquire(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_GET_PAYLOAD:
++            handle_hypercall_get_payload(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_GET_PROGRAM:
++            handle_hypercall_get_program(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_RELEASE:
++            handle_hypercall_kafl_release(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_SUBMIT_CR3:
++            handle_hypercall_kafl_cr3(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_SUBMIT_PANIC:
++            handle_hypercall_kafl_submit_panic(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_SUBMIT_KASAN:
++            handle_hypercall_kafl_submit_kasan(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_PANIC:
++            handle_hypercall_kafl_panic(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_KASAN:
++            handle_hypercall_kafl_kasan(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_LOCK:
++            handle_hypercall_kafl_lock(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_INFO:
++            handle_hypercall_kafl_info(run, cpu);
++            ret = 0;
++            break;
++        case KVM_EXIT_KAFL_NEXT_PAYLOAD:                                                                                                                                     
++            handle_hypercall_kafl_next_payload(run, cpu);                                                                                                                    
++            ret = 0; 
++	    break;  
++        case KVM_EXIT_KAFL_SUBMIT_ADDR:                                                                                                                                     
++            handle_hypercall_kafl_submit_addr(run, cpu);                                                                                                                    
++            ret = 0;                                                                                                                                                       
++            break;                                                                                                                                                                                                                                                                                                              
++#endif     
++
+         case KVM_EXIT_SYSTEM_EVENT:
+             switch (run->system_event.type) {
+             case KVM_SYSTEM_EVENT_SHUTDOWN:
+@@ -2091,6 +2176,11 @@
+             ret = kvm_arch_handle_exit(cpu, run);
+             break;
+         }
++#ifdef CONFIG_PROCESSOR_TRACE                                                                                                                                                
++        //if(pt_hypercalls_enabled()){                                                                                                                                         
++            pt_post_kvm_run(cpu);                                                                                                                                            
++        //}                                                                                                                                                                    
++#endif    
+     } while (ret == 0);
+ 
+     qemu_mutex_lock_iothread();

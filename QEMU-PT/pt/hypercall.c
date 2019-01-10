@@ -357,3 +357,10 @@ void handle_hypercall_kafl_info(struct kvm_run *run, CPUState *cpu){
 	}
 	qemu_system_shutdown_request();
 }
+
+void handle_hypercall_kafl_submit_addr(struct kvm_run *run, CPUState *cpu){
+	if(hypercall_enabled){
+		pt_enable_ip_filtering(cpu, run->hypercall.args[0], run->hypercall.args[1], run->hypercall.args[2], false);
+	}
+}
+

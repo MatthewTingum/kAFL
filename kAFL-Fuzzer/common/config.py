@@ -226,7 +226,7 @@ class FuzzerConfiguration:
         #parser.add_argument('ip_filter', metavar='<IP-Filter>', type=parse_range_ip_filter,
         #                    help='Instruction pointer filter range.')
 
-        parser.add_argument('-ip0', required=True, metavar='<IP-Filter 0>', type=parse_range_ip_filter, help='instruction pointer filter range 0')
+        parser.add_argument('-ip0', required=False, metavar='<IP-Filter 0>', type=parse_range_ip_filter, help='instruction pointer filter range 0')
         parser.add_argument('-ip1', required=False, metavar='<IP-Filter 1>', type=parse_range_ip_filter, help='instruction pointer filter range 1 (not supported in this version)')
         parser.add_argument('-ip2', required=False, metavar='<IP-Filter 2>', type=parse_range_ip_filter, help='instruction pointer filter range 2 (not supported in this version)')
         parser.add_argument('-ip3', required=False, metavar='<IP-Filter 3>', type=parse_range_ip_filter, help='instruction pointer filter range 3 (not supported in this version)')
