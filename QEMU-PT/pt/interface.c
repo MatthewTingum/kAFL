@@ -32,7 +32,7 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 #include "qemu/error-report.h"
 #include "qemu/event_notifier.h"
 #include "qom/object_interfaces.h"
-#include "sysemu/char.h"
+#include "chardev/char-fe.h"
 #include "sysemu/hostmem.h"
 #include "sysemu/qtest.h"
 #include "qapi/visitor.h"
@@ -201,7 +201,7 @@ static void pci_kafl_guest_realize(PCIDevice *dev, Error **errp){
 		kafl_guest_create_memory_bar(s, 2, PAYLOAD_SIZE, s->data_bar_fd_1, errp);
 	
 	if(&s->chr)
-		qemu_chr_fe_set_handlers(&s->chr, kafl_guest_can_receive, kafl_guest_receive, kafl_guest_event, s, NULL, true);
+		qemu_chr_fe_set_handlers(&s->chr, kafl_guest_can_receive, kafl_guest_receive, kafl_guest_event, NULL, s, NULL, true);
 	if(s->bitmap_file)
 		kafl_guest_setup_bitmap(s, kafl_bitmap_size);
 

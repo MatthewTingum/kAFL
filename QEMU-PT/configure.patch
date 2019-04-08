@@ -1,33 +1,41 @@
-# Copyright (C) 2017 Sergej Schumilo
-# 
-# This file is part of QEMU-PT (kAFL).
-# 
-# QEMU-PT is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-# 
-# QEMU-PT is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
-754a755,756
->   --enable-pt) pt="yes"
->   ;;
-1372a1375
->   pt		  enable guest tracing (vmx_pt)
-4791c4794
-<   CFLAGS="-O2 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 $CFLAGS"
----
->   CFLAGS="-Ofast -march=native -mtune=haswell -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 $CFLAGS"
-4793c4796
-<   CFLAGS="-O2 $CFLAGS"
----
->   CFLAGS="-Ofast -march=native -mtune=haswell  $CFLAGS"
-5361a5365,5367
-> fi
-> if test "$pt" = "yes" ; then
->   echo "CONFIG_PROCESSOR_TRACE=y" >> $config_host_mak
+--- configure	2018-12-11 11:44:34.000000000 -0600
++++ configure.patched	2019-04-04 16:35:32.000000000 -0500
+@@ -933,6 +933,8 @@
+   case "$opt" in
+   --help|-h) show_help=yes
+   ;;
++  --enable-pt) pt="yes"
++  ;;
+   --version|-V) exec cat $source_path/VERSION
+   ;;
+   --prefix=*) prefix="$optarg"
+@@ -1697,6 +1699,7 @@
+   debug-tcg       TCG debugging (default is disabled)
+   debug-info      debugging information
+   sparse          sparse checker
++  pt		  enable guest tracing (vmx_pt)
+ 
+   gnutls          GNUTLS cryptography support
+   nettle          nettle cryptography support
+@@ -5632,9 +5635,9 @@
+   CFLAGS="-fprofile-arcs -ftest-coverage -g $CFLAGS"
+   LDFLAGS="-fprofile-arcs -ftest-coverage $LDFLAGS"
+ elif test "$fortify_source" = "yes" ; then
+-  CFLAGS="-O2 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 $CFLAGS"
++  CFLAGS="-Ofast -march=native -mtune=haswell -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 $CFLAGS"
+ elif test "$debug" = "no"; then
+-  CFLAGS="-O2 $CFLAGS"
++  CFLAGS="-Ofast -march=native -mtune=haswell  $CFLAGS"
+ fi
+ 
+ if test "$have_asan" = "yes"; then
+@@ -6344,6 +6347,9 @@
+ if test "$splice" = "yes" ; then
+   echo "CONFIG_SPLICE=y" >> $config_host_mak
+ fi
++if test "$pt" = "yes" ; then
++  echo "CONFIG_PROCESSOR_TRACE=y" >> $config_host_mak
++fi
+ if test "$eventfd" = "yes" ; then
+   echo "CONFIG_EVENTFD=y" >> $config_host_mak
+ fi

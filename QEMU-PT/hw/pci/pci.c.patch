@@ -1,0 +1,12 @@
+--- pci.c	2018-12-11 11:44:34.000000000 -0600
++++ pci.c.patched	2019-04-05 17:36:18.811254000 -0500
+@@ -2544,7 +2544,8 @@
+             object_class_dynamic_cast(klass, INTERFACE_CONVENTIONAL_PCI_DEVICE);
+         ObjectClass *pcie =
+             object_class_dynamic_cast(klass, INTERFACE_PCIE_DEVICE);
+-        assert(conventional || pcie);
++	// Let's actually fix this sometime
++        //assert(conventional || pcie);
+     }
+ }
+ 

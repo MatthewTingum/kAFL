@@ -1,6 +1,6 @@
---- kvm.h	2016-06-07 20:23:53.000000000 -0500
-+++ kvm.h.patched	2019-01-10 13:03:49.838383735 -0600
-@@ -206,6 +206,23 @@
+--- kvm.h	2019-03-27 00:18:00.000000000 -0500
++++ kvm.h.patched	2019-04-03 17:26:10.000000000 -0500
+@@ -236,6 +236,23 @@
  #define KVM_EXIT_IOAPIC_EOI       26
  #define KVM_EXIT_HYPERV           27
  
@@ -24,9 +24,9 @@
  /* For KVM_EXIT_INTERNAL_ERROR */
  /* Emulate instruction failed. */
  #define KVM_INTERNAL_ERROR_EMULATION	1
-@@ -1312,4 +1329,34 @@
- 	__u16 padding[3];
- };
+@@ -1590,4 +1607,34 @@
+ #define KVM_HYPERV_CONN_ID_MASK		0x00ffffff
+ #define KVM_HYPERV_EVENTFD_DEASSIGN	(1 << 0)
  
 +/*
 + * ioctls for vmx_pt fds

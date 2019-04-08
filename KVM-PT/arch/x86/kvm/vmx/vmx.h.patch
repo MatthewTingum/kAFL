@@ -1,0 +1,36 @@
+--- vmx.h	2019-03-27 00:18:00.000000000 -0500
++++ vmx.h.patched	2019-04-04 15:20:43.060998000 -0500
+@@ -174,6 +174,9 @@
+ };
+ 
+ struct vcpu_vmx {
++#ifdef CONFIG_KVM_VMX_PT
++	struct vcpu_vmx_pt*   vmx_pt_config;
++#endif
+ 	struct kvm_vcpu       vcpu;
+ 	unsigned long         host_rsp;
+ 	u8                    fail;
+@@ -380,7 +383,11 @@
+ static inline void vm_entry_controls_init(struct vcpu_vmx *vmx, u32 val)
+ {
+ 	vmcs_write32(VM_ENTRY_CONTROLS, val);
++#ifdef CONFIG_KVM_VMX_PT
++	vmx->vm_entry_controls_shadow = val | 0x20000ULL;	/* Conceal VM entries from Intel PT */
++#else
+ 	vmx->vm_entry_controls_shadow = val;
++#endif
+ }
+ 
+ static inline void vm_entry_controls_set(struct vcpu_vmx *vmx, u32 val)
+@@ -412,7 +419,11 @@
+ static inline void vm_exit_controls_init(struct vcpu_vmx *vmx, u32 val)
+ {
+ 	vmcs_write32(VM_EXIT_CONTROLS, val);
++#ifdef CONFIG_KVM_VMX_PT
++	vmx->vm_exit_controls_shadow = val | 0x1000000ULL;	/* Conceal VM exit from Intel PT */
++#else
+ 	vmx->vm_exit_controls_shadow = val;
++#endif
+ }
+ 
+ static inline void vm_exit_controls_set(struct vcpu_vmx *vmx, u32 val)

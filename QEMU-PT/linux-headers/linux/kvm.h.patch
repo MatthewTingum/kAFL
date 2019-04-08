@@ -1,6 +1,6 @@
---- kvm.h	2017-04-20 09:57:00.000000000 -0500
-+++ kvm.h.patched	2019-01-10 13:03:14.259640878 -0600
-@@ -206,6 +206,26 @@
+--- kvm.h	2018-12-11 11:44:34.000000000 -0600
++++ kvm.h.patched	2019-04-04 16:30:30.000000000 -0500
+@@ -236,6 +236,25 @@
  #define KVM_EXIT_IOAPIC_EOI       26
  #define KVM_EXIT_HYPERV           27
  
@@ -23,13 +23,12 @@
 +#define KVM_EXIT_KAFL_MTF                               115
 +#define KVM_EXIT_KAFL_SUBMIT_ADDR                               116
 +
-+
  /* For KVM_EXIT_INTERNAL_ERROR */
  /* Emulate instruction failed. */
  #define KVM_INTERNAL_ERROR_EMULATION	1
-@@ -1354,4 +1374,38 @@
- #define KVM_X2APIC_API_USE_32BIT_IDS            (1ULL << 0)
- #define KVM_X2APIC_API_DISABLE_BROADCAST_QUIRK  (1ULL << 1)
+@@ -1561,4 +1580,36 @@
+ #define KVM_HYPERV_CONN_ID_MASK		0x00ffffff
+ #define KVM_HYPERV_EVENTFD_DEASSIGN	(1 << 0)
  
 +/*
 + * ioctls for vmx_pt fds
@@ -62,7 +61,5 @@
 +#define KVM_VMX_PT_SUPPORTED                            _IO(KVMIO,      0xe4)
 +
 +#define KVM_VMX_PT_CONFIGURE_HYPERCALL_HOOK     _IOW(KVMIO,     0xe5, __u64)    /* set address for hypercall hooks */
-+
-+
 +
  #endif /* __LINUX_KVM_H */

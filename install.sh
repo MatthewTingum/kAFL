@@ -1,10 +1,10 @@
-LINUX_VERSION="4.6.2"
-LINUX_URL="https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-$LINUX_VERSION.tar.xz"
-LINUX_MD5="70c4571bfb7ce7ccb14ff43b50165d43"
+LINUX_VERSION="5.0.5"
+LINUX_URL="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-$LINUX_VERSION.tar.xz"
+LINUX_MD5="b2eb589ef7ba209599f0bda311caf60a"
 
-QEMU_VERSION="2.9.0"
-QEMU_URL="http://download.qemu-project.org/qemu-2.9.0.tar.xz"
-QEMU_MD5="86c95eb3b24ffea3a84a4e3a856b4e26"
+QEMU_VERSION="3.1.0"
+QEMU_URL="https://download.qemu.org/qemu-3.1.0.tar.xz"
+QEMU_MD5="fb687ce0b02d3bf4327e36d3b99427a8"
 
 echo "================================================="
 echo "                kAFL setup script                "
@@ -19,7 +19,7 @@ if [ ! "`uname -s`" = "Linux" ]; then
 fi
 
 if ! [ -f /etc/lsb-release ]; then
-	echo "[-] Error: Please use Ubuntu (16.04) ..."
+	echo "[-] Error: Please use Ubuntu (18.04 / 19.04) ..."
 	exit 1
 fi
 
@@ -32,7 +32,7 @@ for i in dpkg; do
 done
 
 echo "[*] Installing essentials tools ..."
-sudo -Eu root apt-get install make gcc libcapstone-dev bc libssl-dev python-pip python-pygraphviz -y gnuplot ruby python libgtk2.0-dev libc6-dev flex -y > /dev/null
+sudo -Eu root apt-get install make gcc libcapstone-dev bc libssl-dev python-pip python-pygraphviz -y gnuplot ruby python libgtk-3-dev libc6-dev flex -y > /dev/null
 
 echo "[*] Installing build dependencies for QEMU $QEMU_VERSION ..."
 sudo -Eu root apt-get build-dep qemu-system-x86 -y > /dev/null
@@ -61,11 +61,13 @@ patch qemu-$QEMU_VERSION/monitor.c < QEMU-PT/monitor.c.patch > /dev/null
 patch qemu-$QEMU_VERSION/hmp.c < QEMU-PT/hmp.c.patch > /dev/null
 patch qemu-$QEMU_VERSION/hmp.h < QEMU-PT/hmp.h.patch > /dev/null
 patch qemu-$QEMU_VERSION/Makefile.target < QEMU-PT/Makefile.target.patch > /dev/null
-patch qemu-$QEMU_VERSION/kvm-all.c < QEMU-PT/kvm-all.c.patch > /dev/null
+patch qemu-$QEMU_VERSION/accel/kvm/kvm-all.c < QEMU-PT/accel/kvm/kvm-all.c.patch > /dev/null
 patch qemu-$QEMU_VERSION/vl.c < QEMU-PT/vl.c.patch > /dev/null
 patch qemu-$QEMU_VERSION/configure < QEMU-PT/configure.patch > /dev/null
 patch qemu-$QEMU_VERSION/linux-headers/linux/kvm.h < QEMU-PT/linux-headers/linux/kvm.h.patch > /dev/null
 patch qemu-$QEMU_VERSION/include/qom/cpu.h < QEMU-PT/include/qom/cpu.h.patch > /dev/null
+patch qemu-$QEMU_VERSION/include/sysemu/sysemu.h < QEMU-PT/include/sysemu/sysemu.h.patch > /dev/null
+patch qemu-$QEMU_VERSION/hw/pci/pci.c < QEMU-PT/hw/pci/pci.c.patch > /dev/null
 
 mkdir qemu-$QEMU_VERSION/pt/ 2> /dev/null
 cp QEMU-PT/compile.sh qemu-$QEMU_VERSION/
@@ -92,9 +94,9 @@ cp QEMU-PT/pt/filter.c qemu-$QEMU_VERSION/pt/
 cp QEMU-PT/pt/disassembler.c qemu-$QEMU_VERSION/pt/
 cp QEMU-PT/pt/disassembler.h qemu-$QEMU_VERSION/pt/
 
-patch -p1  qemu-$QEMU_VERSION/hw/misc/applesmc.c < QEMU-PT/applesmc_patches/v1-1-3-applesmc-cosmetic-whitespace-and-indentation-cleanup.patch
-patch -p1  qemu-$QEMU_VERSION/hw/misc/applesmc.c < QEMU-PT/applesmc_patches/v1-2-3-applesmc-consolidate-port-i-o-into-single-contiguous-region.patch
-patch -p1  qemu-$QEMU_VERSION/hw/misc/applesmc.c < QEMU-PT/applesmc_patches/v1-3-3-applesmc-implement-error-status-port.patch
+#patch -p1  qemu-$QEMU_VERSION/hw/misc/applesmc.c < QEMU-PT/applesmc_patches/v1-1-3-applesmc-cosmetic-whitespace-and-indentation-cleanup.patch
+#patch -p1  qemu-$QEMU_VERSION/hw/misc/applesmc.c < QEMU-PT/applesmc_patches/v1-2-3-applesmc-consolidate-port-i-o-into-single-contiguous-region.patch
+#patch -p1  qemu-$QEMU_VERSION/hw/misc/applesmc.c < QEMU-PT/applesmc_patches/v1-3-3-applesmc-implement-error-status-port.patch
 
 echo "[*] Compiling QEMU $QEMU_VERSION ..."
 cd qemu-$QEMU_VERSION
@@ -123,9 +125,10 @@ tar xf kernel.tar.gz
 echo "[*] Patching Kernel $LINUX_VERSION ..."
 patch linux-$LINUX_VERSION/arch/x86/kvm/Makefile < KVM-PT/arch/x86/kvm/Makefile.patch > /dev/null
 patch linux-$LINUX_VERSION/arch/x86/kvm/Kconfig < KVM-PT/arch/x86/kvm/Kconfig.patch > /dev/null
-patch linux-$LINUX_VERSION/arch/x86/kvm/vmx.c < KVM-PT/arch/x86/kvm/vmx.c.patch > /dev/null
 patch linux-$LINUX_VERSION/arch/x86/kvm/svm.c < KVM-PT/arch/x86/kvm/svm.c.patch > /dev/null
 patch linux-$LINUX_VERSION/arch/x86/kvm/x86.c < KVM-PT/arch/x86/kvm/x86.c.patch > /dev/null
+patch linux-$LINUX_VERSION/arch/x86/kvm/vmx/vmx.c < KVM-PT/arch/x86/kvm/vmx/vmx.c.patch > /dev/null
+patch linux-$LINUX_VERSION/arch/x86/kvm/vmx/vmx.h < KVM-PT/arch/x86/kvm/vmx/vmx.h.patch > /dev/null
 patch linux-$LINUX_VERSION/arch/x86/include/asm/kvm_host.h < KVM-PT/arch/x86/include/asm/kvm_host.h.patch > /dev/null
 patch linux-$LINUX_VERSION/arch/x86/include/uapi/asm/kvm.h < KVM-PT/arch/x86/include/uapi/asm/kvm.h.patch > /dev/null
 patch linux-$LINUX_VERSION/include/uapi/linux/kvm.h <  KVM-PT/include/uapi/linux/kvm.h.patch > /dev/null

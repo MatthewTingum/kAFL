@@ -1,31 +1,29 @@
---- kvm-all.c	2017-04-20 09:57:00.000000000 -0500
-+++ kvm-all.c.patched	2019-01-10 13:02:38.936726395 -0600
-@@ -40,6 +40,12 @@
+--- kvm-all.c	2018-12-11 11:44:34.000000000 -0600
++++ kvm-all.c.patched	2019-04-07 18:59:15.333474000 -0500
+@@ -43,6 +43,11 @@
  
  #include "hw/boards.h"
  
 +#ifdef CONFIG_PROCESSOR_TRACE
-+#include "pt.h"
-+#include "pt/hypercall.h"
++#include "../../pt.h"
++#include "../../pt/hypercall.h"
 +#endif
-+
 +
  /* This check must be after config-host.h is included */
  #ifdef CONFIG_EVENTFD
  #include <sys/eventfd.h>
-@@ -319,6 +325,11 @@
+@@ -348,6 +353,10 @@
      cpu->kvm_state = s;
-     cpu->kvm_vcpu_dirty = true;
+     cpu->vcpu_dirty = true;
  
 +#ifdef CONFIG_PROCESSOR_TRACE
 +    pt_kvm_init(cpu);
 +#endif
 +
-+
      mmap_size = kvm_ioctl(s, KVM_GET_VCPU_MMAP_SIZE, 0);
      if (mmap_size < 0) {
          ret = mmap_size;
-@@ -1968,6 +1979,18 @@
+@@ -1957,6 +1966,17 @@
      do {
          MemTxAttrs attrs;
  
@@ -40,11 +38,10 @@
 +        }
 +#endif 
 +
-+
-         if (cpu->kvm_vcpu_dirty) {
+         if (cpu->vcpu_dirty) {
              kvm_arch_put_registers(cpu, KVM_PUT_RUNTIME_STATE);
-             cpu->kvm_vcpu_dirty = false;
-@@ -1984,6 +2007,13 @@
+             cpu->vcpu_dirty = false;
+@@ -1973,6 +1993,12 @@
              kvm_cpu_kick_self();
          }
  
@@ -54,11 +51,10 @@
 +        //}
 +#endif
 +
-+
          /* Read cpu->exit_request before KVM_RUN reads run->immediate_exit.
           * Matching barrier in kvm_eat_signals.
           */
-@@ -2063,6 +2093,61 @@
+@@ -2052,6 +2078,61 @@
          case KVM_EXIT_INTERNAL_ERROR:
              ret = kvm_handle_internal_error(cpu, run);
              break;
@@ -113,14 +109,14 @@
 +	    break;  
 +        case KVM_EXIT_KAFL_SUBMIT_ADDR:                                                                                                                                     
 +            handle_hypercall_kafl_submit_addr(run, cpu);                                                                                                                    
-+            ret = 0;                                                                                                                                                       
-+            break;                                                                                                                                                                                                                                                                                                              
-+#endif     
-+
++            ret = 0;
++	    break;
++                                                                                                                                                                                                                                                                                                             
++#endif   
          case KVM_EXIT_SYSTEM_EVENT:
              switch (run->system_event.type) {
              case KVM_SYSTEM_EVENT_SHUTDOWN:
-@@ -2091,6 +2176,11 @@
+@@ -2080,6 +2161,11 @@
              ret = kvm_arch_handle_exit(cpu, run);
              break;
          }
@@ -128,7 +124,7 @@
 +        //if(pt_hypercalls_enabled()){                                                                                                                                         
 +            pt_post_kvm_run(cpu);                                                                                                                                            
 +        //}                                                                                                                                                                    
-+#endif    
++#endif  
      } while (ret == 0);
  
-     qemu_mutex_lock_iothread();
+     cpu_exec_end(cpu);

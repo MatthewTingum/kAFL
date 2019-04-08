@@ -1,33 +1,31 @@
-# Copyright (C) 2017 Sergej Schumilo
-# 
-# This file is part of KVM-PT (kAFL).
-# 
-# QEMU-PT is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-# 
-# QEMU-PT is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
-4309a4310,4319
-> #ifdef CONFIG_KVM_VMX_PT
-> static int setup_trace_fd_stub(struct kvm_vcpu *vcpu){
-> 	return -EINVAL;
-> }
-> static int vmx_pt_is_enabled(void){
-> 	/* AMD CPUs do not support Intel PT */
-> 	return -EINVAL;
-> }
-> #endif	
-> 
-4417a4428,4432
-> 	
-> #ifdef CONFIG_KVM_VMX_PT
-> 	.setup_trace_fd = setup_trace_fd_stub,
-> 	.vmx_pt_enabled = vmx_pt_is_enabled,
-> #endif	
+--- svm.c	2019-03-27 00:18:00.000000000 -0500
++++ svm.c.patched	2019-04-04 15:38:17.175890000 -0500
+@@ -7098,6 +7098,16 @@
+ 	return -ENODEV;
+ }
+ 
++#ifdef CONFIG_KVM_VMX_PT
++static int setup_trace_fd_stub(struct kvm_vcpu *vcpu){
++	return -EINVAL;
++}
++static int vmx_pt_is_enabled(void){
++	/* AMD CPUs do not support Intel PT */
++	return -EINVAL;
++}
++#endif	
++
+ static struct kvm_x86_ops svm_x86_ops __ro_after_init = {
+ 	.cpu_has_kvm_support = has_svm,
+ 	.disabled_by_bios = is_disabled,
+@@ -7231,6 +7241,11 @@
+ 
+ 	.nested_enable_evmcs = nested_enable_evmcs,
+ 	.nested_get_evmcs_version = nested_get_evmcs_version,
++ 	
++#ifdef CONFIG_KVM_VMX_PT
++	.setup_trace_fd = setup_trace_fd_stub,
++	.vmx_pt_enabled = vmx_pt_is_enabled,
++#endif	
+ };
+ 
+ static int __init svm_init(void)

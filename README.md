@@ -1,3 +1,5 @@
+# Now supports linux 5.0.5 and Qemu 3.1.0
+
 # Troubleshooting
 Don't change the overlay name from the default
 Disable meltdown spectre patches

@@ -1,7 +1,7 @@
---- x86.c	2016-06-07 20:23:53.000000000 -0500
-+++ x86.c.patched	2019-01-10 13:04:24.525293264 -0600
-@@ -2687,6 +2687,12 @@
- 		r = 0;
+--- x86.c	2019-03-27 00:18:00.000000000 -0500
++++ x86.c.patched	2019-04-07 23:32:52.574650000 -0500
+@@ -3176,6 +3176,12 @@
+ 		r = msr_io(NULL, argp, do_get_msr_feature, 1);
  		break;
  	}
 +#ifdef CONFIG_KVM_VMX_PT
@@ -13,8 +13,8 @@
  	default:
  		r = -EINVAL;
  	}
-@@ -3496,6 +3502,12 @@
- 		r = kvm_vcpu_ioctl_enable_cap(vcpu, &cap);
+@@ -4225,6 +4231,12 @@
+ 		r = 0;
  		break;
  	}
 +#ifdef CONFIG_KVM_VMX_PT
@@ -26,10 +26,24 @@
  	default:
  		r = -EINVAL;
  	}
-@@ -5968,7 +5980,91 @@
+@@ -7062,7 +7074,11 @@
+ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
+ {
+ 	unsigned long nr, a0, a1, a2, a3, ret;
+-	int op_64_bit;
++	int op_64_bit, r = 1;
++
++	// This was removed / rearranged here: https://github.com/torvalds/linux/commit/6356ee0c9602004e0a3b4b2dad68ee2ee9385b17#diff-2967f5c1784e6895cdae2b8dd100e68a
++	// Without it, our kAFL lock hypercall saves the VM state at the instruction pointer of the hypercall. Without it, when we loadvm it executes the hypercall and we're stuck
++	kvm_skip_emulated_instruction(vcpu);
+ 
+ 	if (kvm_hv_hypercall_enabled(vcpu->kvm))
+ 		return kvm_hv_hypercall(vcpu);
+@@ -7083,8 +7099,86 @@
+ 		a2 &= 0xFFFFFFFF;
  		a3 &= 0xFFFFFFFF;
  	}
- 
++	
 +#ifdef CONFIG_KVM_VMX_PT
 +	/* kAFL Hypercall Interface (ring 0) */
 +	if(kvm_x86_ops->get_cpl(vcpu) == 0) {
@@ -50,7 +64,7 @@
 +		}
 +	}
 +#endif
-+
+ 
  	if (kvm_x86_ops->get_cpl(vcpu) != 0) {
 +		/* kAFL Hypercall interface */
 +		#ifdef CONFIG_KVM_VMX_PT
@@ -101,12 +115,6 @@
 +					vcpu->run->exit_reason = KVM_EXIT_KAFL_DEBUG;
 +					vcpu->run->hypercall.args[0] = kvm_register_read(vcpu, VCPU_REGS_RCX);
 +					break;
-+				case 16: /* KAFL_GUEST_SUBMIT_ADDR */
-+					vcpu->run->exit_reason = KVM_EXIT_KAFL_SUBMIT_ADDR;
-+					vcpu->run->hypercall.args[0] = kvm_register_read(vcpu, VCPU_REGS_RCX);	// AddrN
-+					vcpu->run->hypercall.args[1] = kvm_register_read(vcpu, VCPU_REGS_RDX);	// IPa
-+					vcpu->run->hypercall.args[2] = kvm_register_read(vcpu, VCPU_REGS_R8);	// IPb
-+					break;
 +				default:
 +					r = -KVM_EPERM;
 +					break;
@@ -118,3 +126,13 @@
  		ret = -KVM_EPERM;
  		goto out;
  	}
+@@ -7115,7 +7209,8 @@
+ 	kvm_register_write(vcpu, VCPU_REGS_RAX, ret);
+ 
+ 	++vcpu->stat.hypercalls;
+-	return kvm_skip_emulated_instruction(vcpu);
++	//return kvm_skip_emulated_instruction(vcpu);
++	return r;
+ }
+ EXPORT_SYMBOL_GPL(kvm_emulate_hypercall);
+ 

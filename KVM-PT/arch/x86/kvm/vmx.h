@@ -5,7 +5,6 @@
 #include <linux/uaccess.h>
 
 struct vcpu_vmx;
-void add_atomic_switch_msr(struct vcpu_vmx *vmx, unsigned msr, u64 guest_val, u64 host_val);
-
+void add_atomic_switch_msr(struct vcpu_vmx *vmx, unsigned msr, u64 guest_val, u64 host_val, bool entry_only);
 #endif
 
