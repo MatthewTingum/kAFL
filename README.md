@@ -3,7 +3,7 @@
 # Troubleshooting
 Don't change the overlay name from the default
 Disable meltdown spectre patches
-Use only Ubuntu 16.04 as the host
+Use only Ubuntu 18.04 as the host
 
 # kAFL: Hardware-Assisted Feedback Fuzzing for OS Kernels
 
